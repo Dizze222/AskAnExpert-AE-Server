@@ -1,5 +1,8 @@
 from collections import defaultdict
+
+
 from flask import Flask, render_template, request, redirect
+from flask_socketio import SocketIO, send, emit
 from flask_sqlalchemy import SQLAlchemy
 from flask import jsonify
 from datetime import datetime
@@ -9,6 +12,7 @@ from flask_jwt_extended import create_access_token, create_refresh_token, JWTMan
 from flask_jwt_extended import get_jwt_identity
 from flask_jwt_extended import jwt_required
 
+
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///posts.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -16,19 +20,12 @@ app.config['SECRET_KEY'] = 'my-super-secret-key'
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=30)
 db = SQLAlchemy(app)
 jwt = JWTManager(app)
+socketio = SocketIO(app,cors_allowed_origin="*")
 
-
-class PhotographerModel(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    theme = db.Column(db.String, nullable=False)
-    idPhotographer = db.Column(db.Integer, nullable=False)
-    author = db.Column(db.String, nullable=False)
-    url = db.Column(db.String, nullable=False)
-    like = db.Column(db.Integer, nullable=False)
-    date = db.Column(db.DateTime, default=datetime.utcnow)
-    comments = db.Column(db.JSON, nullable=False)
-    authorOfComments = db.Column(db.JSON, nullable=False)
-
+@socketio.on('message')
+def handle_message(message):
+    print('received message: ' + message)
+    emit('message', message, broadcast=True)
 
 class AuthModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
